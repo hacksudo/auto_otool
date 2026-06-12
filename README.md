@@ -5,6 +5,11 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 **hacksudo auto otool ** is an advanced static analysis and reverse engineering wrapper for Apple's `otool` binary. Designed for iOS and macOS penetration testers, it automates the discovery of insecure compiler flags, vulnerable C-functions (like `strcpy`, `system`), and deprecated frameworks across complex `.app` bundles.
+### Tool Banner
+<img width="2940" height="1624" alt="image" src="https://github.com/user-attachments/assets/6a5ddb8d-c540-45e7-ac9f-fad4c671d63c" />
+
+### Report Output
+<img width="2850" height="1618" alt="image" src="https://github.com/user-attachments/assets/05d1ca5b-e21e-4a71-be0b-d8f3d94ac193" />
 
 ## 🚀 Features
 
