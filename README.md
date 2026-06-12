@@ -1,10 +1,10 @@
-# 🛠️ hacksudo Otool Pro Scanner
+# 🛠️ hacksudo auto otool Scanner
 
 [![Python 3.x](https://img.shields.io/badge/Python-3.x-blue.svg)](https://www.python.org/)
 [![macOS](https://img.shields.io/badge/OS-macOS-lightgrey.svg)]()
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-**hacksudo Otool Pro** is an advanced static analysis and reverse engineering wrapper for Apple's `otool` binary. Designed for iOS and macOS penetration testers, it automates the discovery of insecure compiler flags, vulnerable C-functions (like `strcpy`, `system`), and deprecated frameworks across complex `.app` bundles.
+**hacksudo auto otool ** is an advanced static analysis and reverse engineering wrapper for Apple's `otool` binary. Designed for iOS and macOS penetration testers, it automates the discovery of insecure compiler flags, vulnerable C-functions (like `strcpy`, `system`), and deprecated frameworks across complex `.app` bundles.
 
 ## 🚀 Features
 
