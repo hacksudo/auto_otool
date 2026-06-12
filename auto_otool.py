@@ -26,41 +26,47 @@ def print_banner():
     print("   ██╔══██║██╔══██║██║     ██╔═██╗ ╚════██║██║   ██║██║  ██║██║   ██║")
     print("   ██║  ██║██║  ██║╚██████╗██║  ██╗███████║╚██████╔╝██████╔╝╚██████╔╝")
     print("   ╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝╚══════╝ ╚═════╝ ╚═════╝  ╚═════╝ ")
-    print("        ██████╗ ████████╗ ██████╗  ██████╗ ██╗                       ")
-    print("       ██╔═══██╗╚══██╔══╝██╔═══██╗██╔═══██╗██║                       ")
-    print("       ██║   ██║   ██║   ██║   ██║██║   ██║██║                       ")
-    print("       ██║   ██║   ██║   ██║   ██║██║   ██║██║                       ")
-    print("       ╚██████╔╝   ██║   ╚██████╔╝╚██████╔╝███████╗                  ")
-    print("        ╚═════╝    ╚═╝    ╚═════╝  ╚═════╝ ╚══════╝                  ")
+    print("            ULTIMATE STATIC ANALYSIS & THREAT INTEL ENGINE           ")
     print(f"{RESET}")
-    print(f"{GREEN}                 --- ADVANCED SECURITY SCANNER ---{RESET}\n")
+    print(f"{GREEN}                     --- Created by hacksudo ---{RESET}\n")
 
+# --- Threat Intelligence Database ---
 CHECKS = [
-    {"flag": "-Iv", "search": "_random", "name": "Insecure Randomness (random)", "severity": "LOW"},
-    {"flag": "-Iv", "search": "_srand", "name": "Insecure Randomness (srand)", "severity": "LOW"},
-    {"flag": "-Iv", "search": "_rand", "name": "Insecure Randomness (rand)", "severity": "LOW"},
-    {"flag": "-Iv", "search": "_CC_MD5", "name": "Weak Cryptography (MD5)", "severity": "HIGH"},
-    {"flag": "-Iv", "search": "_CC_SHA1", "name": "Weak Cryptography (SHA1)", "severity": "MEDIUM"},
-    {"flag": "-Iv", "search": "_malloc", "name": "Memory Allocation (malloc)", "severity": "INFO"},
-    {"flag": "-Iv", "search": "_gets", "name": "Buffer Overflow Risk (gets)", "severity": "CRITICAL"},
-    {"flag": "-Iv", "search": "_memcpy", "name": "Memory Manipulation (memcpy)", "severity": "INFO"},
-    {"flag": "-Iv", "search": "_strncpy", "name": "String Manipulation (strncpy)", "severity": "LOW"},
-    {"flag": "-Iv", "search": "_strcpy", "name": "Buffer Overflow Risk (strcpy)", "severity": "CRITICAL"},
-    {"flag": "-Iv", "search": "_strlen", "name": "String Manipulation (strlen)", "severity": "INFO"},
-    {"flag": "-Iv", "search": "_vsnprintf", "name": "String Manipulation (vsnprintf)", "severity": "LOW"},
-    {"flag": "-Iv", "search": "_sscanf", "name": "String Manipulation (sscanf)", "severity": "LOW"},
-    {"flag": "-Iv", "search": "_strtok", "name": "String Manipulation (strtok)", "severity": "LOW"},
-    {"flag": "-Iv", "search": "_alloca", "name": "Stack Memory Allocation (alloca)", "severity": "LOW"},
-    {"flag": "-Iv", "search": "_sprintf", "name": "Format String Risk (sprintf)", "severity": "HIGH"},
-    {"flag": "-Iv", "search": "_printf", "name": "Format String Risk (printf)", "severity": "MEDIUM"},
-    {"flag": "-Iv", "search": "_vsprintf", "name": "Format String Risk (vsprintf)", "severity": "HIGH"},
-    {"flag": "-Iv", "search": "_system", "name": "OS Command Injection (system)", "severity": "CRITICAL"},
-    {"flag": "-hv", "search": "PIE", "name": "PIE (Position Independent Executable)", "severity": "SECURE_FLAG"},
-    {"flag": "-Iv", "search": "stack_chk", "name": "Stack Canaries", "severity": "SECURE_FLAG"},
-    {"flag": "-Iv", "search": "objc_release", "name": "ARC Enabled", "severity": "SECURE_FLAG"},
-    {"flag": "-arch all -Vl", "search": "LC_ENCRYPT", "name": "Binary Encryption Status", "severity": "INFO"},
-    {"flag": "-L", "search": "LocalAuthentication.framework", "name": "Biometric Auth Framework", "severity": "INFO"},
-    {"flag": "-oV", "search": "UIWebView", "name": "Deprecated WebView (UIWebView)", "severity": "HIGH"}
+    {
+        "flag": "-Iv", "search": "_strcpy", "name": "Buffer Overflow Risk (strcpy)", "severity": "CRITICAL",
+        "observation": "The binary imports '_strcpy', an unsafe C function that copies strings without checking the destination buffer size.",
+        "impact": "An attacker can supply input larger than the buffer, overwriting adjacent memory. This leads to application crashes (DoS) or Remote Code Execution (RCE) by hijacking the execution flow.",
+        "cve_tool": "Tools: GDB, LLDB, Radare2, Metasploit (pattern_create/offset). Ref: CWE-120 (Classic Buffer Overflow).",
+        "recommendation": "Replace '_strcpy' with bounds-checking alternatives like 'strlcpy', 'strncpy_s', or native Swift String handling."
+    },
+    {
+        "flag": "-Iv", "search": "_system", "name": "OS Command Injection (system)", "severity": "CRITICAL",
+        "observation": "The binary imports the '_system' function, allowing it to pass strings directly to the host operating system shell.",
+        "impact": "If user-controlled input reaches this function un-sanitized, an attacker can execute arbitrary OS commands with the privileges of the application.",
+        "cve_tool": "Tools: Commix, Burp Suite (if tied to network input). Ref: CWE-78 (OS Command Injection).",
+        "recommendation": "Avoid calling OS commands directly. Use native APIs (e.g., Foundation, NSTask/Process) with strict argument separation."
+    },
+    {
+        "flag": "-Iv", "search": "_CC_MD5", "name": "Weak Cryptography (MD5)", "severity": "HIGH",
+        "observation": "The binary references MD5 hashing algorithms via the CommonCrypto library.",
+        "impact": "MD5 is highly vulnerable to collision attacks. Attackers can generate two different files/inputs that produce the same hash, breaking integrity checks or forging signatures.",
+        "cve_tool": "Tools: Hashcat, John the Ripper. Ref: CWE-327 (Use of Broken Cryptographic Algorithm).",
+        "recommendation": "Migrate to SHA-256 or SHA-3 via 'CC_SHA256'. Do not use MD5 for passwords, tokens, or file integrity."
+    },
+    {
+        "flag": "-Iv", "search": "_random", "name": "Insecure Randomness (random)", "severity": "LOW",
+        "observation": "The application imports a predictable Pseudo-Random Number Generator (PRNG).",
+        "impact": "If used for security mechanisms (tokens, cryptography, session IDs), an attacker can guess the 'random' values by determining the seed.",
+        "cve_tool": "Tools: Custom Python scripting to predict PRNG output based on system time (seed). Ref: CWE-330.",
+        "recommendation": "Use Cryptographically Secure PRNGs (CSPRNG) like 'SecRandomCopyBytes' or 'arc4random()'."
+    },
+    {
+        "flag": "-oV", "search": "UIWebView", "name": "Deprecated/Insecure WebView (UIWebView)", "severity": "HIGH",
+        "observation": "The binary links against the deprecated 'UIWebView' component.",
+        "impact": "UIWebView lacks modern security isolation (out-of-process rendering) and cannot effectively restrict JavaScript execution, increasing the risk of Cross-Site Scripting (XSS) and bridging vulnerabilities.",
+        "cve_tool": "Tools: Frida, Objection (to hook webview calls). Ref: Apple Deprecation Notices, XSS vectors.",
+        "recommendation": "Replace all instances of 'UIWebView' with 'WKWebView', and ensure 'javaScriptEnabled' is disabled unless strictly necessary."
+    }
 ]
 
 def get_color(severity):
@@ -72,7 +78,7 @@ def find_macho_binaries(app_dir):
     for root, _, files in os.walk(app_dir):
         for file in files:
             full_path = os.path.join(root, file)
-            if file.endswith(('.png', '.jpg', '.nib', '.plist', '.strings', '.css', '.js', '.html')):
+            if file.endswith(('.png', '.jpg', '.nib', '.plist', '.strings', '.css', '.js')):
                 continue
             try:
                 result = subprocess.run(['file', full_path], capture_output=True, text=True)
@@ -89,70 +95,74 @@ def extract_address_from_line(line):
 def generate_html_report(results, app_dir):
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     app_name = os.path.basename(app_dir.rstrip('/'))
-    report_name = f"hacksudo_pro_report_{app_name}.html"
+    report_name = f"hacksudo_threat_report_{app_name}.html"
     
     html = f"""
     <!DOCTYPE html>
     <html lang="en">
     <head>
         <meta charset="UTF-8">
-        <title>hacksudo Pro - Binary Analysis</title>
+        <title>hacksudo Threat Intel Report</title>
         <style>
             body {{ font-family: 'Segoe UI', Tahoma, sans-serif; background-color: #0b0f19; color: #e2e8f0; margin: 0; padding: 20px; }}
             h1 {{ color: #00e5ff; text-align: center; text-transform: uppercase; letter-spacing: 2px; }}
-            .header {{ text-align: center; margin-bottom: 30px; color: #94a3b8; font-size: 1.1em; }}
-            table {{ width: 100%; border-collapse: collapse; background-color: #1e293b; box-shadow: 0 4px 15px rgba(0,0,0,0.5); font-size: 0.95em; }}
-            th, td {{ padding: 12px; text-align: left; border-bottom: 1px solid #334155; vertical-align: top; }}
-            th {{ background-color: #0f172a; color: #38bdf8; text-transform: uppercase; font-weight: bold; }}
-            tr:hover {{ background-color: #334155; }}
-            .CRITICAL {{ color: #ff4d4d; font-weight: bold; }}
-            .HIGH {{ color: #ff751a; font-weight: bold; }}
-            .MEDIUM {{ color: #eab308; font-weight: bold; }}
-            .LOW {{ color: #2dd4bf; }}
-            .INFO {{ color: #60a5fa; }}
-            .SECURE_FLAG {{ color: #4ade80; font-weight: bold; }}
-            .address {{ color: #f472b6; font-family: monospace; font-weight: bold; }}
-            .file-path {{ color: #cbd5e1; font-size: 0.85em; word-break: break-all; }}
-            .cmd-box {{ background-color: #111827; padding: 6px; border-radius: 4px; font-family: monospace; font-size: 0.85em; color: #f59e0b; border-left: 3px solid #f59e0b; margin-bottom: 8px; white-space: pre-wrap; }}
-            .snippet-box {{ background-color: #0b0f19; padding: 8px; border-radius: 4px; font-family: monospace; font-size: 0.85em; color: #a3e635; white-space: pre-wrap; }}
+            .header {{ text-align: center; margin-bottom: 40px; color: #94a3b8; font-size: 1.1em; border-bottom: 1px solid #1e293b; padding-bottom: 20px; }}
+            .card {{ background-color: #1e293b; border-radius: 8px; margin-bottom: 25px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); border-left: 5px solid #334155; }}
+            .card.CRITICAL {{ border-left-color: #ff4d4d; }}
+            .card.HIGH {{ border-left-color: #ff751a; }}
+            .card.LOW {{ border-left-color: #2dd4bf; }}
+            h2 {{ margin-top: 0; display: flex; justify-content: space-between; align-items: center; }}
+            .sev-badge {{ padding: 5px 12px; border-radius: 4px; font-size: 0.8em; color: #000; font-weight: bold; }}
+            .sev-CRITICAL {{ background-color: #ff4d4d; }}
+            .sev-HIGH {{ background-color: #ff751a; }}
+            .sev-LOW {{ background-color: #2dd4bf; }}
+            .section-title {{ color: #38bdf8; font-size: 0.9em; text-transform: uppercase; margin: 15px 0 5px 0; font-weight: bold; }}
+            .text-content {{ color: #cbd5e1; font-size: 0.95em; line-height: 1.5; margin: 0; }}
+            .cmd-box {{ background-color: #0f172a; padding: 10px; border-radius: 4px; font-family: monospace; font-size: 0.85em; color: #f59e0b; margin-top: 10px; }}
+            .snippet-box {{ background-color: #000; padding: 10px; border-radius: 4px; font-family: monospace; font-size: 0.85em; color: #a3e635; margin-top: 5px; white-space: pre-wrap; }}
         </style>
     </head>
     <body>
-        <h1>hacksudo Advanced Static Analysis</h1>
+        <h1>Static Analysis & Threat Intel</h1>
         <div class="header">
             <p><strong>Target Bundle:</strong> {app_dir}</p>
             <p><strong>Scan Date:</strong> {timestamp}</p>
         </div>
-        <table>
-            <thead>
-                <tr>
-                    <th style="width: 20%;">Vulnerability / Finding</th>
-                    <th style="width: 10%;">Severity</th>
-                    <th style="width: 20%;">File Object</th>
-                    <th style="width: 50%;">Cross-Check Command & Binary Snippet</th>
-                </tr>
-            </thead>
-            <tbody>
     """
     
     for res in results:
         for item in res['findings']:
             html += f"""
-                <tr>
-                    <td><strong>{res['name']}</strong></td>
-                    <td class="{res['severity']}">{res['severity']}</td>
-                    <td class="file-path">{item['file']}</td>
-                    <td>
-                        <div class="cmd-box"># Cross-Check Verification Command:\n{item['verify_cmd']}</div>
-                        <span class="address">Location Address: {item['address']}</span>
-                        <div class="snippet-box">{item['snippet']}</div>
-                    </td>
-                </tr>
+        <div class="card {res['severity']}">
+            <h2>
+                <span style="color: #f8fafc;">{res['name']}</span>
+                <span class="sev-badge sev-{res['severity']}">{res['severity']}</span>
+            </h2>
+            
+            <p class="section-title">Target File & Location</p>
+            <p class="text-content"><strong>File:</strong> {item['file']} <br><strong>Address:</strong> <span style="font-family: monospace; color: #f472b6;">{item['address']}</span></p>
+
+            <p class="section-title">Observation</p>
+            <p class="text-content">{res['observation']}</p>
+
+            <p class="section-title">Exploitation & Impact</p>
+            <p class="text-content">{res['impact']}</p>
+
+            <p class="section-title">Tools & CVE Reference</p>
+            <p class="text-content">{res['cve_tool']}</p>
+
+            <p class="section-title">Recommendation</p>
+            <p class="text-content">{res['recommendation']}</p>
+
+            <p class="section-title">Cross-Check Verification Command</p>
+            <div class="cmd-box">{item['verify_cmd']}</div>
+
+            <p class="section-title">Raw Binary Memory Snippet</p>
+            <div class="snippet-box">{item['snippet']}</div>
+        </div>
             """
             
     html += """
-            </tbody>
-        </table>
     </body>
     </html>
     """
@@ -176,12 +186,12 @@ def main():
         return
         
     print(f"{GREEN}[+] Found {len(binaries)} files/frameworks to analyze.{RESET}\n")
-    time.sleep(0.5)
+    time.sleep(1)
 
     report_results = []
-    log_buffer = deque(maxlen=10)
+    log_buffer = deque(maxlen=8)
     
-    print("-" * 80)
+    print("-" * 90)
     print(f"{MAGENTA}--- HACKSUDO VERBOSE OTOOL ENGINE ---{RESET}")
     
     for check in CHECKS:
@@ -190,12 +200,15 @@ def main():
         findings_for_this_check = []
         
         for binary in binaries:
-            cmd = f"otool {flag} '{binary}'"
+            cmd = f"otool {flag} '{os.path.basename(binary)}'"
             log_buffer.append(f"[Exec] {cmd}")
             
             print("\033[F" * len(log_buffer), end="")
             for log_line in log_buffer:
-                print(f"{CYAN}{log_line[:78].ljust(78)}{RESET}")
+                print(f"{CYAN}{log_line[:88].ljust(88)}{RESET}")
+            
+            # Control the speed of the output so it is readable
+            time.sleep(0.08)
 
             try:
                 process = subprocess.run(['otool'] + flag.split() + [binary], capture_output=True, text=True)
@@ -207,7 +220,6 @@ def main():
                 for line in lines:
                     if re.search(pattern, line):
                         addr = extract_address_from_line(line)
-                        # Build the exact command the user can paste to verify manually
                         verify_cmd = f"otool {flag} '{binary}' | grep {grep_flag} '{search_term}'"
                         
                         findings_for_this_check.append({
@@ -221,28 +233,35 @@ def main():
 
         if findings_for_this_check:
             color = get_color(check['severity'])
-            print(f"\n{color}[!] IDENTIFIED: {check['name']} | Severity: {check['severity']} | Count: {len(findings_for_this_check)}{RESET}")
+            print(f"\n{color}╔═════════════════════════════════════════════════════════════════════════════════════════")
+            print(f"║ [!] VULNERABILITY DETECTED: {check['name']} | Severity: {check['severity']}")
+            print(f"╠═════════════════════════════════════════════════════════════════════════════════════════{RESET}")
             preview = findings_for_this_check[0]
-            print(f"{color}    ↳ File: {preview['file']} | Addr: {preview['address']}{RESET}")
-            print(f"{YELLOW}    ↳ Cross-Check Command: {preview['verify_cmd']}{RESET}")
-            print(f"{color}    ↳ Snip: {preview['snippet']}{RESET}")
-            if len(findings_for_this_check) > 1:
-                print(f"{color}    ↳ (+ {len(findings_for_this_check) - 1} more instances logged to HTML){RESET}\n")
+            print(f"{color}║ [+] Target File : {preview['file']} (Address: {preview['address']})")
+            print(f"║ [+] Observation : {check['observation']}")
+            print(f"║ [+] Impact      : {check['impact']}")
+            print(f"║ [+] Threat Intel: {check['cve_tool']}")
+            print(f"║ [+] CMD Verify  : {preview['verify_cmd']}{RESET}")
+            print(f"{color}╚═════════════════════════════════════════════════════════════════════════════════════════{RESET}\n")
             
-            for _ in range(4): log_buffer.append("") 
+            for _ in range(3): log_buffer.append("") 
             
             report_results.append({
                 "name": check['name'],
                 "severity": check['severity'],
+                "observation": check['observation'],
+                "impact": check['impact'],
+                "cve_tool": check['cve_tool'],
+                "recommendation": check['recommendation'],
                 "findings": findings_for_this_check
             })
 
-    print("-" * 80)
-    print(f"\n{GREEN}[*] Hacksudo Pro Analysis complete!{RESET}")
+    print("-" * 90)
+    print(f"\n{GREEN}[*] Hacksudo Threat Engine Analysis complete!{RESET}")
     
     if report_results:
         report_file = generate_html_report(report_results, app_dir)
-        print(f"{GREEN}[*] Ultimate HTML Report generated: {os.path.abspath(report_file)}{RESET}")
+        print(f"{GREEN}[*] Comprehensive Threat Report generated: {os.path.abspath(report_file)}{RESET}")
 
 if __name__ == "__main__":
     main()
