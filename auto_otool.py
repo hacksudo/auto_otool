@@ -35,33 +35,32 @@ def print_banner():
     print(f"{RESET}")
     print(f"{GREEN}                 --- ADVANCED SECURITY SCANNER ---{RESET}\n")
 
-# --- Advanced Vulnerability Ruleset ---
 CHECKS = [
-    # Insecure APIs (-Iv)
     {"flag": "-Iv", "search": "_random", "name": "Insecure Randomness (random)", "severity": "LOW"},
+    {"flag": "-Iv", "search": "_srand", "name": "Insecure Randomness (srand)", "severity": "LOW"},
+    {"flag": "-Iv", "search": "_rand", "name": "Insecure Randomness (rand)", "severity": "LOW"},
     {"flag": "-Iv", "search": "_CC_MD5", "name": "Weak Cryptography (MD5)", "severity": "HIGH"},
     {"flag": "-Iv", "search": "_CC_SHA1", "name": "Weak Cryptography (SHA1)", "severity": "MEDIUM"},
     {"flag": "-Iv", "search": "_malloc", "name": "Memory Allocation (malloc)", "severity": "INFO"},
     {"flag": "-Iv", "search": "_gets", "name": "Buffer Overflow Risk (gets)", "severity": "CRITICAL"},
+    {"flag": "-Iv", "search": "_memcpy", "name": "Memory Manipulation (memcpy)", "severity": "INFO"},
+    {"flag": "-Iv", "search": "_strncpy", "name": "String Manipulation (strncpy)", "severity": "LOW"},
     {"flag": "-Iv", "search": "_strcpy", "name": "Buffer Overflow Risk (strcpy)", "severity": "CRITICAL"},
+    {"flag": "-Iv", "search": "_strlen", "name": "String Manipulation (strlen)", "severity": "INFO"},
+    {"flag": "-Iv", "search": "_vsnprintf", "name": "String Manipulation (vsnprintf)", "severity": "LOW"},
+    {"flag": "-Iv", "search": "_sscanf", "name": "String Manipulation (sscanf)", "severity": "LOW"},
+    {"flag": "-Iv", "search": "_strtok", "name": "String Manipulation (strtok)", "severity": "LOW"},
+    {"flag": "-Iv", "search": "_alloca", "name": "Stack Memory Allocation (alloca)", "severity": "LOW"},
+    {"flag": "-Iv", "search": "_sprintf", "name": "Format String Risk (sprintf)", "severity": "HIGH"},
+    {"flag": "-Iv", "search": "_printf", "name": "Format String Risk (printf)", "severity": "MEDIUM"},
+    {"flag": "-Iv", "search": "_vsprintf", "name": "Format String Risk (vsprintf)", "severity": "HIGH"},
     {"flag": "-Iv", "search": "_system", "name": "OS Command Injection (system)", "severity": "CRITICAL"},
-    
-    # Header & Security Flags (-hv, -Iv)
     {"flag": "-hv", "search": "PIE", "name": "PIE (Position Independent Executable)", "severity": "SECURE_FLAG"},
     {"flag": "-Iv", "search": "stack_chk", "name": "Stack Canaries", "severity": "SECURE_FLAG"},
     {"flag": "-Iv", "search": "objc_release", "name": "ARC Enabled", "severity": "SECURE_FLAG"},
-    
-    # Frameworks & WebViews (-L, -oV)
+    {"flag": "-arch all -Vl", "search": "LC_ENCRYPT", "name": "Binary Encryption Status", "severity": "INFO"},
     {"flag": "-L", "search": "LocalAuthentication.framework", "name": "Biometric Auth Framework", "severity": "INFO"},
-    {"flag": "-oV", "search": "UIWebView", "name": "Deprecated WebView (UIWebView)", "severity": "HIGH"},
-    {"flag": "-oV", "search": "WKWebView", "name": "Secure WebView (WKWebView)", "severity": "SECURE_FLAG"},
-    
-    # Advanced Load Commands (-l)
-    {"flag": "-l", "search": "LC_ENCRYPT", "name": "Binary Encryption Status", "severity": "INFO"},
-    {"flag": "-l", "search": "LC_RPATH", "name": "Runpath Search Path (Check for @executable_path)", "severity": "MEDIUM"},
-    
-    # Architecture (-fh)
-    {"flag": "-fh", "search": "architecture", "name": "Binary Architecture Info", "severity": "INFO"}
+    {"flag": "-oV", "search": "UIWebView", "name": "Deprecated WebView (UIWebView)", "severity": "HIGH"}
 ]
 
 def get_color(severity):
@@ -69,16 +68,13 @@ def get_color(severity):
     return colors.get(severity, RESET)
 
 def find_macho_binaries(app_dir):
-    """Recursively finds all Mach-O binaries in the .app bundle (executables, dylibs, frameworks)."""
     macho_files = []
-    for root, dirs, files in os.walk(app_dir):
+    for root, _, files in os.walk(app_dir):
         for file in files:
             full_path = os.path.join(root, file)
-            # Skip obvious non-binaries
             if file.endswith(('.png', '.jpg', '.nib', '.plist', '.strings', '.css', '.js', '.html')):
                 continue
             try:
-                # Use 'file' command to check if it's a Mach-O binary
                 result = subprocess.run(['file', full_path], capture_output=True, text=True)
                 if "Mach-O" in result.stdout:
                     macho_files.append(full_path)
@@ -86,13 +82,9 @@ def find_macho_binaries(app_dir):
                 pass
     return macho_files
 
-def extract_address_from_line(line, search_term):
-    """Attempts to extract the hex memory address (line number equivalent) from otool output."""
-    # Match standard otool indirect symbol format: 0x0000000100084ab0  0x... _strcpy
+def extract_address_from_line(line):
     match = re.search(r'(0x[0-9a-fA-F]+)', line)
-    if match:
-        return match.group(1)
-    return "Global/Header"
+    return match.group(1) if match else "Global/Header"
 
 def generate_html_report(results, app_dir):
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -119,9 +111,10 @@ def generate_html_report(results, app_dir):
             .LOW {{ color: #2dd4bf; }}
             .INFO {{ color: #60a5fa; }}
             .SECURE_FLAG {{ color: #4ade80; font-weight: bold; }}
-            .address {{ color: #f472b6; font-family: monospace; }}
+            .address {{ color: #f472b6; font-family: monospace; font-weight: bold; }}
             .file-path {{ color: #cbd5e1; font-size: 0.85em; word-break: break-all; }}
-            .snippet-box {{ background-color: #0b0f19; padding: 10px; border-radius: 5px; font-family: monospace; font-size: 0.85em; color: #a3e635; white-space: pre-wrap; margin-top: 5px; }}
+            .cmd-box {{ background-color: #111827; padding: 6px; border-radius: 4px; font-family: monospace; font-size: 0.85em; color: #f59e0b; border-left: 3px solid #f59e0b; margin-bottom: 8px; white-space: pre-wrap; }}
+            .snippet-box {{ background-color: #0b0f19; padding: 8px; border-radius: 4px; font-family: monospace; font-size: 0.85em; color: #a3e635; white-space: pre-wrap; }}
         </style>
     </head>
     <body>
@@ -135,8 +128,8 @@ def generate_html_report(results, app_dir):
                 <tr>
                     <th style="width: 20%;">Vulnerability / Finding</th>
                     <th style="width: 10%;">Severity</th>
-                    <th style="width: 25%;">File (Binary/Framework)</th>
-                    <th style="width: 45%;">Location (Address) & Snippet</th>
+                    <th style="width: 20%;">File Object</th>
+                    <th style="width: 50%;">Cross-Check Command & Binary Snippet</th>
                 </tr>
             </thead>
             <tbody>
@@ -150,7 +143,8 @@ def generate_html_report(results, app_dir):
                     <td class="{res['severity']}">{res['severity']}</td>
                     <td class="file-path">{item['file']}</td>
                     <td>
-                        <span class="address">Address: {item['address']}</span>
+                        <div class="cmd-box"># Cross-Check Verification Command:\n{item['verify_cmd']}</div>
+                        <span class="address">Location Address: {item['address']}</span>
                         <div class="snippet-box">{item['snippet']}</div>
                     </td>
                 </tr>
@@ -162,7 +156,6 @@ def generate_html_report(results, app_dir):
     </body>
     </html>
     """
-    
     with open(report_name, "w", encoding="utf-8") as f:
         f.write(html)
     return report_name
@@ -179,15 +172,13 @@ def main():
     binaries = find_macho_binaries(app_dir)
     
     if not binaries:
-        print(f"{RED}[!] No compiled Mach-O binaries found in this directory.{RESET}")
+        print(f"{RED}[!] No compiled Mach-O binaries found.{RESET}")
         return
         
-    print(f"{GREEN}[+] Found {len(binaries)} executable files/frameworks to analyze.{RESET}\n")
-    time.sleep(1)
+    print(f"{GREEN}[+] Found {len(binaries)} files/frameworks to analyze.{RESET}\n")
+    time.sleep(0.5)
 
     report_results = []
-    
-    # 10-line scrolling log buffer
     log_buffer = deque(maxlen=10)
     
     print("-" * 80)
@@ -202,8 +193,7 @@ def main():
             cmd = f"otool {flag} '{binary}'"
             log_buffer.append(f"[Exec] {cmd}")
             
-            # Print the scrolling buffer
-            print("\033[F" * len(log_buffer), end="") # Move cursor up
+            print("\033[F" * len(log_buffer), end="")
             for log_line in log_buffer:
                 print(f"{CYAN}{log_line[:78].ljust(78)}{RESET}")
 
@@ -211,19 +201,20 @@ def main():
                 process = subprocess.run(['otool'] + flag.split() + [binary], capture_output=True, text=True)
                 lines = process.stdout.split('\n')
                 
-                # Regex for precise function matching if it starts with _
-                if search_term.startswith("_"):
-                    pattern = r"\b" + re.escape(search_term) + r"\b"
-                else:
-                    pattern = re.escape(search_term)
+                pattern = r"\b" + re.escape(search_term) + r"\b" if search_term.startswith("_") else re.escape(search_term)
+                grep_flag = "-w" if search_term.startswith("_") else ""
 
                 for line in lines:
                     if re.search(pattern, line):
-                        addr = extract_address_from_line(line, search_term)
+                        addr = extract_address_from_line(line)
+                        # Build the exact command the user can paste to verify manually
+                        verify_cmd = f"otool {flag} '{binary}' | grep {grep_flag} '{search_term}'"
+                        
                         findings_for_this_check.append({
                             "file": os.path.basename(binary),
                             "address": addr,
-                            "snippet": line.strip()
+                            "snippet": line.strip(),
+                            "verify_cmd": verify_cmd
                         })
             except Exception:
                 pass
@@ -231,15 +222,14 @@ def main():
         if findings_for_this_check:
             color = get_color(check['severity'])
             print(f"\n{color}[!] IDENTIFIED: {check['name']} | Severity: {check['severity']} | Count: {len(findings_for_this_check)}{RESET}")
-            # Show a quick preview in terminal
             preview = findings_for_this_check[0]
             print(f"{color}    ↳ File: {preview['file']} | Addr: {preview['address']}{RESET}")
+            print(f"{YELLOW}    ↳ Cross-Check Command: {preview['verify_cmd']}{RESET}")
             print(f"{color}    ↳ Snip: {preview['snippet']}{RESET}")
             if len(findings_for_this_check) > 1:
                 print(f"{color}    ↳ (+ {len(findings_for_this_check) - 1} more instances logged to HTML){RESET}\n")
             
-            # Pad the log buffer so the UI doesn't break
-            for _ in range(3): log_buffer.append("") 
+            for _ in range(4): log_buffer.append("") 
             
             report_results.append({
                 "name": check['name'],
